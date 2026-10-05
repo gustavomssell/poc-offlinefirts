@@ -5,7 +5,10 @@ import { useEngine } from '@/hooks/use-engine'
 import { fmtHora } from '@/lib/backoff'
 import type { LogLevel } from '@/lib/types'
 
-const ESTILOS: Record<LogLevel, { rotulo: string; variant: 'outline' | 'secondary' | 'default' | 'destructive' }> = {
+const ESTILOS: Record<
+  LogLevel,
+  { rotulo: string; variant: 'outline' | 'secondary' | 'default' | 'destructive' }
+> = {
   info: { rotulo: 'info', variant: 'outline' },
   success: { rotulo: 'ok', variant: 'secondary' },
   warn: { rotulo: 'warn', variant: 'default' },
@@ -20,7 +23,9 @@ export function LogEventos() {
       <Empty className="border-0">
         <EmptyHeader>
           <EmptyTitle>Sem eventos</EmptyTitle>
-          <EmptyDescription>O log registra cada tentativa, backoff e sincronização.</EmptyDescription>
+          <EmptyDescription>
+            O log registra cada tentativa, backoff e sincronização.
+          </EmptyDescription>
         </EmptyHeader>
       </Empty>
     )

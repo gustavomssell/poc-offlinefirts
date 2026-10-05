@@ -217,7 +217,9 @@ export function criarServidor(controles: () => Controles) {
     }
   }
 
-  async function desde(cursor: number): Promise<{ registros: RegistroServidor[]; tumbas: Tumbstone[] }> {
+  async function desde(
+    cursor: number,
+  ): Promise<{ registros: RegistroServidor[]; tumbas: Tumbstone[] }> {
     recarregar()
     await latencia()
     return {

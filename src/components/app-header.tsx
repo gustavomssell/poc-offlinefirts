@@ -67,9 +67,7 @@ export function AppHeader({ vista }: { vista: Vista }) {
 
         <div className="min-w-56 flex-1">
           <h1 className="truncate text-sm font-semibold tracking-tight">{conteudo.titulo}</h1>
-          <p className="hidden truncate text-xs text-muted-foreground sm:block">
-            {conteudo.sub}
-          </p>
+          <p className="hidden truncate text-xs text-muted-foreground sm:block">{conteudo.sub}</p>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3">

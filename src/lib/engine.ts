@@ -98,7 +98,8 @@ export class SyncEngine {
 
   private carregarSim(): Simulacao {
     const guardado = lerJSON<Simulacao>(CHAVE_SIM) ?? {}
-    const online = typeof navigator !== 'undefined' && 'onLine' in navigator ? navigator.onLine : true
+    const online =
+      typeof navigator !== 'undefined' && 'onLine' in navigator ? navigator.onLine : true
     return {
       ...SIM_PADRAO,
       ...guardado,
@@ -488,13 +489,19 @@ export class SyncEngine {
         atual.updatedAt = Date.now()
         await salvarIdb(STORE_FILA, atual)
         this.ops = [...this.ops]
-        this.registrar('warn', `Payload alterado durante o envio — ${curto(voando.entityId)} será reenviado`)
+        this.registrar(
+          'warn',
+          `Payload alterado durante o envio — ${curto(voando.entityId)} será reenviado`,
+        )
       }
 
       this.servidor = this.server.listar()
       this.marcarSincronizado()
       this.proximoPull = true
-      this.registrar('success', `${rotuloOperacao(voando.tipo)} de ${curto(voando.entityId)} sincronizado`)
+      this.registrar(
+        'success',
+        `${rotuloOperacao(voando.tipo)} de ${curto(voando.entityId)} sincronizado`,
+      )
     } catch (erro) {
       if (erro instanceof ErroConflito) {
         await this.resolverConflito(voando, erro.registro)
@@ -752,7 +759,10 @@ export class SyncEngine {
       if (patch.online) this.proximoPull = true
     }
     if (patch.pausada !== undefined && patch.pausada !== antes.pausada) {
-      this.registrar(patch.pausada ? 'warn' : 'info', patch.pausada ? 'Fila pausada' : 'Fila retomada')
+      this.registrar(
+        patch.pausada ? 'warn' : 'info',
+        patch.pausada ? 'Fila pausada' : 'Fila retomada',
+      )
     }
 
     this.emit()

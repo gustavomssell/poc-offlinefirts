@@ -74,9 +74,7 @@ export function ListaPedidos({ filtro = '' }: { filtro?: string }) {
                 </p>
 
                 {pedido.observacao && (
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {pedido.observacao}
-                  </p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{pedido.observacao}</p>
                 )}
 
                 {status === 'failed' && op?.lastError && (
