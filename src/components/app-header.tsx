@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import {
+  CheckCheckIcon,
   MoonIcon,
   PauseIcon,
   PlayIcon,
@@ -15,6 +16,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Switch } from '@/components/ui/switch'
 import { useEngine } from '@/hooks/use-engine'
 import { engine } from '@/lib/engine'
+import { fmtHora } from '@/lib/backoff'
 import type { Vista } from '@/components/app-sidebar'
 
 const TITULOS: Record<Vista, { titulo: string; sub: string }> = {
@@ -53,7 +55,7 @@ function BotaoTema() {
 }
 
 export function AppHeader({ vista }: { vista: Vista }) {
-  const { sim, stats } = useEngine()
+  const { sim, stats, ultimaSync } = useEngine()
   const conteudo = TITULOS[vista]
   const pendencias = stats.pendentes + stats.sincronizando + stats.falhas
   const backoffice = vista === 'backoffice'
@@ -91,6 +93,13 @@ export function AppHeader({ vista }: { vista: Vista }) {
           </div>
 
           {pendencias > 0 && <Badge variant="outline">{pendencias} pendências</Badge>}
+
+          {ultimaSync && (
+            <Badge variant="outline" title="Última sincronização">
+              <CheckCheckIcon />
+              {fmtHora(ultimaSync)}
+            </Badge>
+          )}
 
           {backoffice && (
             <>

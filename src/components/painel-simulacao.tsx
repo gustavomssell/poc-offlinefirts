@@ -1,4 +1,4 @@
-import { RotateCcwIcon, Trash2Icon } from 'lucide-react'
+import { EraserIcon, RotateCcwIcon, Trash2Icon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
@@ -57,10 +57,19 @@ export function PainelSimulacao() {
           Backoff: base {sim.baseMs / 1000}s, teto {sim.maxMs / 1000}s, até {sim.maxTentativas}{' '}
           tentativas.
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => engine.reiniciarServidor()}>
             <RotateCcwIcon data-icon="inline-start" />
             Reiniciar servidor
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void engine.limparDispositivo()}
+            title="Apaga pedidos e fila deste dispositivo"
+          >
+            <EraserIcon data-icon="inline-start" />
+            Limpar dispositivo
           </Button>
           <Button variant="ghost" size="sm" onClick={() => engine.limparLog()}>
             <Trash2Icon data-icon="inline-start" />

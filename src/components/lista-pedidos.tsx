@@ -10,9 +10,30 @@ import { fmtHora } from '@/lib/backoff'
 import { curto, moeda } from '@/lib/pedidos'
 import type { Pedido } from '@/lib/types'
 
-export function ListaPedidos() {
+export function ListaPedidos({ filtro = '' }: { filtro?: string }) {
   const { pedidos, ops, statusPedidos } = useEngine()
   const [editando, setEditando] = useState<Pedido | null>(null)
+
+  const termo = filtro.trim().toLowerCase()
+  const visiveis = termo
+    ? pedidos.filter((p) =>
+        `${p.cliente} ${p.produto} ${p.observacao} ${p.id}`.toLowerCase().includes(termo),
+      )
+    : pedidos
+
+  if (visiveis.length === 0 && termo) {
+    return (
+      <Empty className="border-0">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LayersIcon />
+          </EmptyMedia>
+          <EmptyTitle>Nenhum pedido encontrado</EmptyTitle>
+          <EmptyDescription>Nada bate com “{filtro}”.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    )
+  }
 
   if (pedidos.length === 0) {
     return (
@@ -33,7 +54,7 @@ export function ListaPedidos() {
   return (
     <>
       <div className="flex flex-col gap-2">
-        {pedidos.map((pedido) => {
+        {visiveis.map((pedido) => {
           const status = statusPedidos[pedido.id]
           const op = ops.find((o) => o.entityId === pedido.id)
 

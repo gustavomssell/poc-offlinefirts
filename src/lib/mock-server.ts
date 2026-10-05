@@ -1,7 +1,10 @@
-import type { PedidoInput, RegistroServidor } from './types'
+import type { PedidoInput, RegistroServidor, Tumbstone } from './types'
 
 export const LIMITE_CREDITO = 50_000
-const CHAVE = 'poc-sync:servidor'
+const CHAVE_REGS = 'poc-sync:servidor'
+const CHAVE_TUMBAS = 'poc-sync:tumbas'
+const CHAVE_IDEMP = 'poc-sync:idemp'
+const MAX_IDEMP = 64
 
 export class ErroServidor extends Error {
   permanente: boolean
@@ -13,14 +16,36 @@ export class ErroServidor extends Error {
   }
 }
 
+export class ErroConflito extends Error {
+  registro: RegistroServidor
+
+  constructor(mensagem: string, registro: RegistroServidor) {
+    super(mensagem)
+    this.name = 'ErroConflito'
+    this.registro = registro
+  }
+}
+
 export type Controles = {
   taxaFalha: number
   latenciaMs: number
 }
 
+export type Envio = {
+  chave: string
+  clienteRev: number
+  atualizadoEm: number
+}
+
+type MarcaIdempotencia = {
+  chave: string
+  id: string
+  rev: number
+}
+
 function semear(): RegistroServidor[] {
   const agora = Date.now()
-  const base: Array<Omit<RegistroServidor, 'sincronizadoEm'>> = [
+  const base: Array<Omit<RegistroServidor, 'sincronizadoEm' | 'rev' | 'atualizadoEm'>> = [
     {
       id: 'seed-0001',
       cliente: 'Padaria Estrela',
@@ -40,27 +65,57 @@ function semear(): RegistroServidor[] {
       observacao: '',
     },
   ]
-  return base.map((b, i) => ({ ...b, sincronizadoEm: agora - (i + 1) * 60_000 }))
+  return base.map((b, i) => ({
+    ...b,
+    rev: 1,
+    atualizadoEm: agora - (i + 1) * 60_000,
+    sincronizadoEm: agora - (i + 1) * 60_000,
+  }))
+}
+
+function ler<T>(chave: string, padrao: T): T {
+  try {
+    const cru = localStorage.getItem(chave)
+    if (cru) return JSON.parse(cru) as T
+  } catch {
+    // storage indisponivel -> usa o padrao
+  }
+  return padrao
+}
+
+function gravar(chave: string, valor: unknown): void {
+  try {
+    localStorage.setItem(chave, JSON.stringify(valor))
+  } catch {
+    // modo privado / cota: estado fica so na memoria
+  }
+}
+
+/** Migra registros gravados por versoes anteriores da POC (sem rev/atualizadoEm). */
+function normalizar(registros: RegistroServidor[]): RegistroServidor[] {
+  return registros.map((r) => ({
+    ...r,
+    rev: typeof r.rev === 'number' ? r.rev : 1,
+    atualizadoEm:
+      typeof r.atualizadoEm === 'number' ? r.atualizadoEm : (r.sincronizadoEm ?? Date.now()),
+  }))
 }
 
 function carregar(): RegistroServidor[] {
-  try {
-    const cru = localStorage.getItem(CHAVE)
-    if (cru) return JSON.parse(cru) as RegistroServidor[]
-  } catch {
-    // storage indisponivel -> volta para a semente
+  const guardado = localStorage.getItem(CHAVE_REGS)
+  if (guardado) {
+    try {
+      const registros = JSON.parse(guardado) as RegistroServidor[]
+      const normalizados = normalizar(registros)
+      if (normalizados.some((r) => typeof r.rev !== 'number')) gravar(CHAVE_REGS, normalizados)
+      return normalizados
+    } catch {
+      // JSON corrompido -> ressementeia
+    }
   }
   const inicial = semear()
-  persistir(inicial)
+  gravar(CHAVE_REGS, inicial)
   return inicial
-}
-
-function persistir(registros: RegistroServidor[]): void {
-  try {
-    localStorage.setItem(CHAVE, JSON.stringify(registros))
-  } catch {
-    // modo privado / cota: estado do servidor fica so na memoria
-  }
 }
 
 export function criarServidor(controles: () => Controles) {
@@ -68,6 +123,11 @@ export function criarServidor(controles: () => Controles) {
 
   function ordenados(): RegistroServidor[] {
     return [...registros].sort((a, b) => b.sincronizadoEm - a.sincronizadoEm)
+  }
+
+  function recarregar(): RegistroServidor[] {
+    registros = carregar()
+    return ordenados()
   }
 
   async function latencia(): Promise<void> {
@@ -80,8 +140,23 @@ export function criarServidor(controles: () => Controles) {
     return Math.random() < controles().taxaFalha
   }
 
-  async function put(id: string, payload: PedidoInput): Promise<RegistroServidor> {
+  function idempotencias(): MarcaIdempotencia[] {
+    return ler<MarcaIdempotencia[]>(CHAVE_IDEMP, [])
+  }
+
+  function registrarIdempotencia(marca: MarcaIdempotencia): void {
+    const atual = [marca, ...idempotencias().filter((m) => m.chave !== marca.chave)]
+    gravar(CHAVE_IDEMP, atual.slice(0, MAX_IDEMP))
+  }
+
+  async function put(id: string, payload: PedidoInput, envio: Envio): Promise<RegistroServidor> {
     await latencia()
+
+    const replay = idempotencias().find((m) => m.chave === envio.chave)
+    if (replay) {
+      const existente = registros.find((r) => r.id === replay.id)
+      if (existente) return existente
+    }
 
     if (instavel()) {
       throw new ErroServidor('503 Service Unavailable — instabilidade transitória', false)
@@ -94,31 +169,75 @@ export function criarServidor(controles: () => Controles) {
       )
     }
 
-    const registro: RegistroServidor = { id, ...payload, sincronizadoEm: Date.now() }
+    const atual = registros.find((r) => r.id === id)
+
+    if (atual) {
+      const clienteAtrasado = envio.clienteRev < atual.rev
+      const servidorMaisRecente = envio.atualizadoEm < atual.atualizadoEm
+      if (clienteAtrasado && servidorMaisRecente) {
+        throw new ErroConflito(
+          `409 Conflito de versão em ${id}: o servidor tem uma alteração mais recente (rev ${atual.rev})`,
+          atual,
+        )
+      }
+    }
+
+    const agora = Date.now()
+    const registro: RegistroServidor = {
+      id,
+      ...payload,
+      rev: (atual?.rev ?? 0) + 1,
+      atualizadoEm: envio.atualizadoEm,
+      sincronizadoEm: agora,
+    }
     registros = [...registros.filter((r) => r.id !== id), registro]
-    persistir(registros)
+    gravar(CHAVE_REGS, registros)
+    registrarIdempotencia({ chave: envio.chave, id, rev: registro.rev })
     return registro
   }
 
-  async function remove(id: string): Promise<void> {
+  async function remove(id: string, chave: string): Promise<void> {
     await latencia()
+
+    const replay = idempotencias().find((m) => m.chave === chave)
+    if (replay) return
 
     if (instavel()) {
       throw new ErroServidor('503 Service Unavailable — instabilidade transitória', false)
     }
 
+    const existia = registros.some((r) => r.id === id)
     registros = registros.filter((r) => r.id !== id)
-    persistir(registros)
+    gravar(CHAVE_REGS, registros)
+    registrarIdempotencia({ chave, id, rev: 0 })
+
+    if (existia) {
+      const tumbas = ler<Tumbstone[]>(CHAVE_TUMBAS, [])
+      gravar(CHAVE_TUMBAS, [{ id, deletadoEm: Date.now() }, ...tumbas].slice(0, MAX_IDEMP))
+    }
+  }
+
+  async function desde(cursor: number): Promise<{ registros: RegistroServidor[]; tumbas: Tumbstone[] }> {
+    recarregar()
+    await latencia()
+    return {
+      registros: registros.filter((r) => r.sincronizadoEm > cursor),
+      tumbas: ler<Tumbstone[]>(CHAVE_TUMBAS, []).filter((t) => t.deletadoEm > cursor),
+    }
   }
 
   function reiniciar(): RegistroServidor[] {
     registros = semear()
-    persistir(registros)
+    gravar(CHAVE_REGS, registros)
+    gravar(CHAVE_TUMBAS, [])
+    gravar(CHAVE_IDEMP, [])
     return ordenados()
   }
 
   return {
     listar: ordenados,
+    recarregar,
+    desde,
     put,
     remove,
     reiniciar,

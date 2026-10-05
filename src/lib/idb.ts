@@ -58,3 +58,7 @@ export function salvar(store: string, valor: unknown): Promise<IDBValidKey> {
 export function remover(store: string, chave: IDBValidKey): Promise<undefined> {
   return transacao(store, 'readwrite', (s) => s.delete(chave) as IDBRequest<undefined>)
 }
+
+export function limpar(store: string): Promise<undefined> {
+  return transacao(store, 'readwrite', (s) => s.clear() as IDBRequest<undefined>)
+}

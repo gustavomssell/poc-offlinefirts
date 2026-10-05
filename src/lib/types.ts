@@ -11,11 +11,19 @@ export type Pedido = PedidoInput & {
   id: string
   createdAt: number
   updatedAt: number
+  serverRev: number | null
 }
 
 export type RegistroServidor = PedidoInput & {
   id: string
+  rev: number
+  atualizadoEm: number
   sincronizadoEm: number
+}
+
+export type Tumbstone = {
+  id: string
+  deletadoEm: number
 }
 
 export type TipoOperacao = 'create' | 'update' | 'delete'
@@ -26,6 +34,7 @@ export type Operacao = {
   opId: string
   seq: number
   rev: number
+  chave: string
   entityId: string
   tipo: TipoOperacao
   payload: PedidoInput | null
@@ -64,6 +73,7 @@ export type Stats = {
   pendentes: number
   sincronizando: number
   falhas: number
+  conflitos: number
 }
 
 export type Snapshot = {
@@ -76,4 +86,5 @@ export type Snapshot = {
   agora: number
   statusPedidos: Record<string, StatusPedido>
   stats: Stats
+  ultimaSync: number | null
 }

@@ -77,7 +77,14 @@ export function BackofficeView() {
               {moeda(LIMITE_CREDITO)} são rejeitados com 422.
             </CardDescription>
             <CardAction>
-              <Badge variant="secondary">{stats.falhas} em quarentena</Badge>
+              <div className="flex items-center gap-2">
+                {stats.conflitos > 0 && (
+                  <Badge variant="outline">{stats.conflitos} conflitos</Badge>
+                )}
+                <Badge variant={stats.falhas > 0 ? 'destructive' : 'secondary'}>
+                  {stats.falhas} em quarentena
+                </Badge>
+              </div>
             </CardAction>
           </CardHeader>
           <CardContent>
