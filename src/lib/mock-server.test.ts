@@ -59,11 +59,15 @@ describe('criarServidor: conflito 409', () => {
     await servidor.put('e1', input, { chave: 'b', clienteRev: 1, atualizadoEm: 5000 })
 
     const erro = await servidor
-      .put('e1', { ...input, cliente: 'Local atrasada' }, {
-        chave: 'c',
-        clienteRev: 1,
-        atualizadoEm: 2000,
-      })
+      .put(
+        'e1',
+        { ...input, cliente: 'Local atrasada' },
+        {
+          chave: 'c',
+          clienteRev: 1,
+          atualizadoEm: 2000,
+        },
+      )
       .catch((e: unknown) => e)
 
     expect(erro).toBeInstanceOf(ErroConflito)
@@ -77,11 +81,15 @@ describe('criarServidor: conflito 409', () => {
     const servidor = criarServidor(controles)
     await servidor.put('e1', input, { chave: 'a', clienteRev: 0, atualizadoEm: 1000 })
 
-    const ok = await servidor.put('e1', { ...input, cliente: 'Nova' }, {
-      chave: 'b',
-      clienteRev: 1,
-      atualizadoEm: 9000,
-    })
+    const ok = await servidor.put(
+      'e1',
+      { ...input, cliente: 'Nova' },
+      {
+        chave: 'b',
+        clienteRev: 1,
+        atualizadoEm: 9000,
+      },
+    )
 
     expect(ok.rev).toBe(2)
     expect(ok.cliente).toBe('Nova')
@@ -93,11 +101,15 @@ describe('criarServidor: 422 permanente', () => {
     const servidor = criarServidor(controles)
 
     const erro = await servidor
-      .put('e2', { ...input, quantidade: 2, unitario: LIMITE_CREDITO, total: LIMITE_CREDITO * 2 }, {
-        chave: 'x',
-        clienteRev: 0,
-        atualizadoEm: 1000,
-      })
+      .put(
+        'e2',
+        { ...input, quantidade: 2, unitario: LIMITE_CREDITO, total: LIMITE_CREDITO * 2 },
+        {
+          chave: 'x',
+          clienteRev: 0,
+          atualizadoEm: 1000,
+        },
+      )
       .catch((e: unknown) => e)
 
     expect(erro).toBeInstanceOf(ErroServidor)

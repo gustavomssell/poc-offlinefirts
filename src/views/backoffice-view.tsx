@@ -59,7 +59,9 @@ export function BackofficeView() {
         <Card className="lg:col-span-5">
           <CardHeader>
             <CardTitle>Aguardando chegar</CardTitle>
-            <CardDescription>O que existe apenas no dispositivo, visto do servidor.</CardDescription>
+            <CardDescription>
+              O que existe apenas no dispositivo, visto do servidor.
+            </CardDescription>
             <CardAction>
               <Badge variant={ops.length > 0 ? 'outline' : 'secondary'}>{ops.length}</Badge>
             </CardAction>

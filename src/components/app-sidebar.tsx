@@ -75,7 +75,11 @@ export function AppSidebar({ vista, onVistaChange }: Props) {
 
       <SidebarFooter>
         <div className="flex items-center gap-2 rounded-lg px-2 py-2 text-xs text-sidebar-foreground/70">
-          {sim.online ? <WifiIcon className="size-4" /> : <WifiOffIcon className="size-4 text-destructive" />}
+          {sim.online ? (
+            <WifiIcon className="size-4" />
+          ) : (
+            <WifiOffIcon className="size-4 text-destructive" />
+          )}
           <span className="truncate group-data-[collapsible=icon]:hidden">
             {sim.online ? 'Conectado' : 'Sem conexão'}
           </span>

@@ -33,9 +33,7 @@ export function PainelSimulacao() {
         <div role="group" aria-label="Latência do servidor" className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-sm font-medium">Latência do servidor</span>
-            <span className="text-sm tabular-nums text-muted-foreground">
-              {sim.latenciaMs} ms
-            </span>
+            <span className="text-sm tabular-nums text-muted-foreground">{sim.latenciaMs} ms</span>
           </div>
           <Slider
             value={[sim.latenciaMs]}

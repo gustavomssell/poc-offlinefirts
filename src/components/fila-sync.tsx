@@ -67,7 +67,8 @@ export function FilaSync() {
             <div className="flex items-end justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-xs tabular-nums text-muted-foreground">
-                  {op.attempts}/{sim.maxTentativas} tentativas · próxima {proximaTentativa(op, agora)}
+                  {op.attempts}/{sim.maxTentativas} tentativas · próxima{' '}
+                  {proximaTentativa(op, agora)}
                 </p>
                 <Progress className="mt-1.5" value={(op.attempts / sim.maxTentativas) * 100} />
               </div>
