@@ -107,7 +107,6 @@ function carregar(): RegistroServidor[] {
     try {
       const registros = JSON.parse(guardado) as RegistroServidor[]
       const normalizados = normalizar(registros)
-      if (normalizados.some((r) => typeof r.rev !== 'number')) gravar(CHAVE_REGS, normalizados)
       return normalizados
     } catch {
       // JSON corrompido -> ressementeia

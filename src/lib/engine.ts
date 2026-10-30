@@ -505,6 +505,8 @@ export class SyncEngine {
     } catch (erro) {
       if (erro instanceof ErroConflito) {
         await this.resolverConflito(voando, erro.registro)
+        // Após adotar a versão do servidor, puxa eventuais outras mudanças remotas.
+        this.proximoPull = true
       } else {
         await this.tratarFalha(voando, erro)
       }
